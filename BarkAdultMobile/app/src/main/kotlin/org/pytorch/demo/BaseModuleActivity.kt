@@ -1,106 +1,110 @@
-package org.pytorch.demo;
+package org.pytorch.demo
 
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
+import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import androidx.annotation.UiThread
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 
-import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
-public class BaseModuleActivity extends AppCompatActivity {
-  private static final int UNSET = 0;
-
-  protected HandlerThread mBackgroundThread;
-  protected Handler mBackgroundHandler;
-  protected Handler mUIHandler;
-
-  @Override
-  protected void onCreate(@Nullable Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    mUIHandler = new Handler(getMainLooper());
-  }
-
-  @Override
-  protected void onPostCreate(@Nullable Bundle savedInstanceState) {
-    super.onPostCreate(savedInstanceState);
-    final Toolbar toolbar = findViewById(R.id.toolbar);
-    if (toolbar != null) {
-      setSupportActionBar(toolbar);
+class BaseModuleActivity : AppCompatActivity() {
+    protected var mBackgroundThread: HandlerThread? = null
+    protected var mBackgroundHandler: Handler? = null
+    protected var mUIHandler: Handler? = null
+    @Override
+    protected fun onCreate(@Nullable savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        mUIHandler = Handler(getMainLooper())
     }
-    startBackgroundThread();
-  }
 
-  protected void startBackgroundThread() {
-    mBackgroundThread = new HandlerThread("ModuleActivity");
-    mBackgroundThread.start();
-    mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
-  }
-
-  @Override
-  protected void onDestroy() {
-    stopBackgroundThread();
-    super.onDestroy();
-  }
-
-  protected void stopBackgroundThread() {
-    mBackgroundThread.quitSafely();
-    try {
-      mBackgroundThread.join();
-      mBackgroundThread = null;
-      mBackgroundHandler = null;
-    } catch (InterruptedException e) {
-      Log.e(Constants.TAG, "Error on stopping background thread", e);
+    @Override
+    protected fun onPostCreate(@Nullable savedInstanceState: Bundle?) {
+        super.onPostCreate(savedInstanceState)
+        val toolbar: Toolbar = findViewById(R.id.toolbar)
+        if (toolbar != null) {
+            setSupportActionBar(toolbar)
+        }
+        startBackgroundThread()
     }
-  }
 
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    getMenuInflater().inflate(R.menu.menu_model, menu);
-    menu.findItem(R.id.action_info).setVisible(getInfoViewCode() != UNSET);
-    return true;
-  }
-
-  @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
-    if (item.getItemId() == R.id.action_info) {
-      onMenuItemInfoSelected();
+    protected fun startBackgroundThread() {
+        mBackgroundThread = HandlerThread("ModuleActivity")
+        mBackgroundThread.start()
+        mBackgroundHandler = Handler(mBackgroundThread.getLooper())
     }
-    return super.onOptionsItemSelected(item);
-  }
 
-  protected int getInfoViewCode() {
-    return UNSET;
-  }
+    @Override
+    protected fun onDestroy() {
+        stopBackgroundThread()
+        super.onDestroy()
+    }
 
-  protected String getInfoViewAdditionalText() {
-    return null;
-  }
+    protected fun stopBackgroundThread() {
+        mBackgroundThread.quitSafely()
+        try {
+            mBackgroundThread.join()
+            mBackgroundThread = null
+            mBackgroundHandler = null
+        } catch (e: InterruptedException) {
+            Log.e(Constants.TAG, "Error on stopping background thread", e)
+        }
+    }
 
-  private void onMenuItemInfoSelected() {
-    final AlertDialog.Builder builder = new AlertDialog.Builder(this)
-        .setCancelable(true)
-        .setView(InfoViewFactory.newInfoView(this, getInfoViewCode(), getInfoViewAdditionalText()));
+    @Override
+    fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        getMenuInflater().inflate(R.menu.menu_model, menu)
+        menu.findItem(R.id.action_info).setVisible(getInfoViewCode() != UNSET)
+        return true
+    }
 
-    builder.show();
-  }
+    @Override
+    fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        if (item.getItemId() === R.id.action_info) {
+            onMenuItemInfoSelected()
+        }
+        return super.onOptionsItemSelected(item)
+    }
 
-  @UiThread
-  protected void showErrorDialog(View.OnClickListener clickListener) {
-    final View view = InfoViewFactory.newErrorDialogView(this);
-    final AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.CustomDialog)
-        .setCancelable(false)
-        .setView(view);
-    final AlertDialog alertDialog = builder.show();
-    view.setOnClickListener(v -> {
-      clickListener.onClick(v);
-      alertDialog.dismiss();
-    });
-  }
+    protected fun getInfoViewCode(): Int {
+        return UNSET
+    }
+
+    protected fun getInfoViewAdditionalText(): String? {
+        return null
+    }
+
+    private fun onMenuItemInfoSelected() {
+        val builder: AlertDialog.Builder = Builder(this)
+            .setCancelable(true)
+            .setView(
+                InfoViewFactory.newInfoView(
+                    this,
+                    getInfoViewCode(),
+                    getInfoViewAdditionalText()
+                )
+            )
+        builder.show()
+    }
+
+    @UiThread
+    protected fun showErrorDialog(clickListener: View.OnClickListener?) {
+        val view: View = InfoViewFactory.newErrorDialogView(this)
+        val builder: AlertDialog.Builder = Builder(this, R.style.CustomDialog)
+            .setCancelable(false)
+            .setView(view)
+        val alertDialog: AlertDialog = builder.show()
+        view.setOnClickListener { v ->
+            clickListener.onClick(v)
+            alertDialog.dismiss()
+        }
+    }
+
+    companion object {
+        private const val UNSET = 0
+    }
 }
